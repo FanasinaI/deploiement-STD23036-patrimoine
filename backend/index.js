@@ -1,11 +1,17 @@
 import express from 'express';
 import cors from 'cors';
 import moment from 'moment';
+import path from 'path';
 import { possessions } from './models/possessions.js';
 
 const app = express();
+const port = process.env.PORT || 5000;
+
 app.use(cors());
 app.use(express.json());
+
+// Servir les fichiers statiques
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/possession', (req, res) => {
   res.json({ possessions });
@@ -30,17 +36,13 @@ app.post('/possession', (req, res) => {
 
 app.put('/possession/:libelle', (req, res) => {
   const { libelle } = req.params;
-  console.log('Libelle reçu:', libelle); // Ajoute cette ligne pour déboguer
-
   const { dateFin } = req.body;
   const index = possessions.findIndex(p => p.libelle === libelle);
 
   if (index !== -1) {
     possessions[index].dateFin = dateFin;
-    console.log('Possession mise à jour:', possessions[index]); // Pour vérifier la mise à jour
     res.json(possessions[index]);
   } else {
-    console.log('Possession non trouvée pour:', libelle); // Pour voir pourquoi ça échoue
     res.status(404).json({ error: 'Possession not found' });
   }
 });
@@ -102,6 +104,11 @@ app.post('/patrimoine/range', (req, res) => {
   res.json({ dateDebut, dateFin, valeur: totalValeur });
 });
 
-app.listen(5000, () => {
-  console.log('Server is running on port 5000');
+// Route de fallback pour servir l'index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
