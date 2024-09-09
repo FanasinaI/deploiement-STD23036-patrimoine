@@ -3,19 +3,28 @@ import cors from 'cors';
 import moment from 'moment';
 import data from './data.json' assert { type: 'json' };
 import bodyParser from 'body-parser';
+import path from 'path';
 
 const app = express();
 const port = process.env.PORT || 8000;
 
+// Middleware
 app.use(express.json());
 app.use(bodyParser.json());
-app.use(
-  cors({
-    origin: '*',  // Permettre toutes les origines; modifier si tu veux restreindre
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  })
-);
+app.use(cors({
+  origin: '*',  // Permet toutes les origines; modifier si tu veux restreindre
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
 
+// Serve les fichiers statiques depuis le répertoire 'public'
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Route de fallback pour servir index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Chargement des données
 const possessions = data.find(item => item.model === 'Patrimoine')?.data.possessions || [];
 
 // Endpoints pour gérer les possessions
@@ -119,6 +128,13 @@ app.post('/patrimoine/ranges', (req, res) => {
   res.json(result);
 });
 
+// Gestion des erreurs
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+// Lancement du serveur
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server is running on port ${port}`);
 });
